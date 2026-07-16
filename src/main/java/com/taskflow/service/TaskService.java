@@ -1,7 +1,7 @@
 package com.taskflow.service;
 
 import com.taskflow.dto.TaskDTO;
-import com.taskflow.exception.ResourceNotFoundException;
+import com.taskflow.exception.TarefaNaoEncontradaException;
 import com.taskflow.model.Task;
 import com.taskflow.repository.TaskRepository;
 import org.springframework.stereotype.Service;
@@ -11,73 +11,79 @@ import java.util.List;
 @Service
 public class TaskService {
 
-
     private final TaskRepository repository;
-
 
     public TaskService(TaskRepository repository) {
         this.repository = repository;
     }
 
 
-    public List<Task> listar() {
+    public List<TaskDTO> listar() {
 
-        return repository.findAll();
-
+        return repository.findAll()
+                .stream()
+                .map(this::converterParaDTO)
+                .toList();
     }
 
 
-    public Task guardar(TaskDTO dto) {
+    public TaskDTO guardar(Task task) {
 
-        Task tarefa = converter(dto);
+        Task salva = repository.save(task);
 
-        return repository.save(tarefa);
-
+        return converterParaDTO(salva);
     }
 
 
-    public Task procurar(Long id) {
+    public TaskDTO procurar(Long id) {
 
-        return repository.findById(id)
+        Task tarefa = repository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Tarefa não encontrada")
-                );
+                        new RuntimeException("Tarefa não encontrada"));
+
+        return converterParaDTO(tarefa);
     }
 
 
-    public Task atualizar(Long id, Task dados) {
+    public TaskDTO atualizar(Long id, Task dados) {
 
-        Task tarefa = procurar(id);
+        Task tarefa = repository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Tarefa não encontrada"));
+
 
         tarefa.setTitulo(dados.getTitulo());
         tarefa.setDescricao(dados.getDescricao());
         tarefa.setConcluida(dados.isConcluida());
         tarefa.setDataCriacao(dados.getDataCriacao());
 
-        return repository.save(tarefa);
 
+        Task atualizada = repository.save(tarefa);
+
+        return converterParaDTO(atualizada);
     }
 
 
     public void apagar(Long id) {
 
-        Task tarefa = procurar(id);
+        Task tarefa = repository.findById(id)
+                .orElseThrow(() ->
+                        new TarefaNaoEncontradaException("Tarefa não encontrada"));
 
         repository.delete(tarefa);
-
     }
 
 
-    private Task converter(TaskDTO dto) {
+    private TaskDTO converterParaDTO(Task task) {
 
-        Task tarefa = new Task();
+        TaskDTO dto = new TaskDTO();
 
-        tarefa.setTitulo(dto.getTitulo());
-        tarefa.setDescricao(dto.getDescricao());
-        tarefa.setConcluida(dto.isConcluida());
-        tarefa.setDataCriacao(dto.getDataCriacao());
+        dto.setId(task.getId());
+        dto.setTitulo(task.getTitulo());
+        dto.setDescricao(task.getDescricao());
+        dto.setConcluida(task.isConcluida());
+        dto.setDataCriacao(task.getDataCriacao());
 
-        return tarefa;
+        return dto;
     }
-
 }

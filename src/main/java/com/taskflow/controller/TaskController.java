@@ -1,7 +1,9 @@
 package com.taskflow.controller;
 
+import com.taskflow.dto.TaskDTO;
 import com.taskflow.model.Task;
 import com.taskflow.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,38 +20,34 @@ public class TaskController {
     }
 
 
+    @PostMapping
+    public TaskDTO criar(@Valid @RequestBody Task task) {
+        return service.guardar(task);
+    }
+
     @GetMapping
-    public List<Task> listar() {
+    public List<TaskDTO> listar() {
         return service.listar();
     }
 
 
-    @PostMapping
-    public Task criar(@RequestBody Task task) {
-        return service.guardar(task);
-    }
-
-
     @GetMapping("/{id}")
-    public Task buscar(@PathVariable("id") Long id) {
-
+    public TaskDTO buscar(@PathVariable("id") Long id) {
         return service.procurar(id);
     }
 
 
     @PutMapping("/{id}")
-    public Task atualizar(@PathVariable("id") Long id,
-                          @RequestBody Task dados) {
+    public TaskDTO atualizar(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody Task task) {
 
-        return service.atualizar(id, dados);
+        return service.atualizar(id, task);
     }
 
 
     @DeleteMapping("/{id}")
     public void apagar(@PathVariable("id") Long id) {
-
         service.apagar(id);
-
     }
-
 }
