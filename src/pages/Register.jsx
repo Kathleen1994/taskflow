@@ -1,0 +1,78 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { register } from "../services/authService";
+
+export default function Register() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [erro, setErro] = useState("");
+
+  const navigate = useNavigate();
+
+  async function cadastrar(event) {
+    event.preventDefault();
+
+    setMensagem("");
+    setErro("");
+
+    try {
+      await register(username, password);
+
+      setMensagem("Usuário cadastrado com sucesso!");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1200);
+    } catch (error) {
+      console.error(error);
+      setErro("Não foi possível cadastrar o usuário.");
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <div className="brand-mark">TF</div>
+
+        <h1>Criar conta</h1>
+        <p className="subtitle">Cadastre-se para começar a usar o TaskFlow.</p>
+
+        <form onSubmit={cadastrar}>
+          <label htmlFor="username">Usuário</label>
+          <input
+            id="username"
+            type="text"
+            placeholder="Digite seu usuário"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            required
+          />
+
+          <label htmlFor="password">Senha</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="Digite sua senha"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+
+          {mensagem && <p>{mensagem}</p>}
+          {erro && <p className="error-message">{erro}</p>}
+
+          <button type="submit">Cadastrar</button>
+        </form>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => navigate("/")}
+        >
+          Voltar para o login
+        </button>
+      </section>
+    </main>
+  );
+}

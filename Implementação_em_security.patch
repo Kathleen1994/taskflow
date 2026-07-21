@@ -1,0 +1,154 @@
+Subject: [PATCH] Implementação em security
+---
+Index: src/main/java/com/taskflow/security/JwtFilter.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/taskflow/security/JwtFilter.java b/src/main/java/com/taskflow/security/JwtFilter.java
+--- a/src/main/java/com/taskflow/security/JwtFilter.java	(revision 1186d3a346e5e467f7acf657fdb3bf8241f3f696)
++++ b/src/main/java/com/taskflow/security/JwtFilter.java	(revision 447335dd21c5ec5981948eac8dde95085dbdb0d7)
+@@ -4,18 +4,31 @@
+ import jakarta.servlet.ServletException;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
++
++import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
++import org.springframework.security.core.context.SecurityContextHolder;
++import org.springframework.security.core.userdetails.UserDetails;
+ import org.springframework.stereotype.Component;
+ import org.springframework.web.filter.OncePerRequestFilter;
+ 
++
+ import java.io.IOException;
+ 
++
+ @Component
+ public class JwtFilter extends OncePerRequestFilter {
+ 
++
+     private final JwtService jwtService;
++    private final CustomUserDetailsService userDetailsService;
+ 
+-    public JwtFilter(JwtService jwtService) {
++
++    public JwtFilter(
++            JwtService jwtService,
++            CustomUserDetailsService userDetailsService
++    ) {
+         this.jwtService = jwtService;
++        this.userDetailsService = userDetailsService;
+     }
+ 
+ 
+@@ -26,6 +39,44 @@
+             FilterChain filterChain
+     ) throws ServletException, IOException {
+ 
++
++        String header = request.getHeader("Authorization");
++
++
++        if (header != null && header.startsWith("Bearer ")) {
++
++            String token = header.substring(7);
++
++            try {
++
++                String username =
++                        jwtService.extractUsername(token);
++
++
++                UserDetails user =
++                        userDetailsService.loadUserByUsername(username);
++
++
++                UsernamePasswordAuthenticationToken auth =
++                        new UsernamePasswordAuthenticationToken(
++                                user,
++                                null,
++                                user.getAuthorities()
++                        );
++
++
++                SecurityContextHolder
++                        .getContext()
++                        .setAuthentication(auth);
++
++
++            } catch (Exception e) {
++
++                SecurityContextHolder.clearContext();
++            }
++        }
++
++
+         filterChain.doFilter(request, response);
+     }
+ }
+\ No newline at end of file
+Index: src/main/java/com/taskflow/security/JwtService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/taskflow/security/JwtService.java b/src/main/java/com/taskflow/security/JwtService.java
+--- a/src/main/java/com/taskflow/security/JwtService.java	(revision 1186d3a346e5e467f7acf657fdb3bf8241f3f696)
++++ b/src/main/java/com/taskflow/security/JwtService.java	(revision 447335dd21c5ec5981948eac8dde95085dbdb0d7)
+@@ -1,12 +1,11 @@
+ package com.taskflow.security;
+ 
+-
+ import io.jsonwebtoken.Jwts;
+-import io.jsonwebtoken.SignatureAlgorithm;
+ import io.jsonwebtoken.security.Keys;
+ import org.springframework.stereotype.Service;
+ 
+ import javax.crypto.SecretKey;
++import java.nio.charset.StandardCharsets;
+ import java.util.Date;
+ 
+ 
+@@ -14,8 +13,16 @@
+ public class JwtService {
+ 
+ 
+-    private final SecretKey key =
+-            Keys.secretKeyFor(SignatureAlgorithm.HS256);
++    private final String SECRET =
++            "minha-chave-super-secreta-taskflow-2026-123456";
++
++
++    private SecretKey getKey() {
++
++        return Keys.hmacShaKeyFor(
++                SECRET.getBytes(StandardCharsets.UTF_8)
++        );
++    }
+ 
+ 
+     public String generateToken(String username) {
+@@ -24,9 +31,12 @@
+                 .subject(username)
+                 .issuedAt(new Date())
+                 .expiration(
+-                        new Date(System.currentTimeMillis() + 86400000)
++                        new Date(
++                                System.currentTimeMillis()
++                                        + 86400000
++                        )
+                 )
+-                .signWith(key)
++                .signWith(getKey())
+                 .compact();
+     }
+ 
+@@ -34,7 +44,7 @@
+     public String extractUsername(String token) {
+ 
+         return Jwts.parser()
+-                .verifyWith(key)
++                .verifyWith(getKey())
+                 .build()
+                 .parseSignedClaims(token)
+                 .getPayload()
