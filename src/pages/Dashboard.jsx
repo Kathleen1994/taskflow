@@ -1,78 +1,22 @@
-import { useEffect, useState } from "react";
-import api from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const [tarefas, setTarefas] = useState([]);
-  const [erro, setErro] = useState("");
-
-  useEffect(() => {
-    async function carregarTarefas() {
-      try {
-        const response = await api.get("/tasks");
-        setTarefas(response.data);
-      } catch {
-        setErro("Não foi possível carregar as tarefas.");
-      }
-    }
-
-    carregarTarefas();
-  }, []);
+  const navigate = useNavigate();
 
   function sair() {
     localStorage.removeItem("token");
-    window.location.href = "/";
+    navigate("/");
   }
 
   return (
-    <main className="dashboard-page">
-      <header className="topbar">
-        <div>
-          <h1>TaskFlow</h1>
-          <p>Gestão simples e eficiente das suas tarefas.</p>
-        </div>
+    <div className="dashboard">
+      <h1>Dashboard</h1>
 
-        <button className="logout-button" onClick={sair}>
-          Sair
-        </button>
-      </header>
+      <p>Login realizado com sucesso.</p>
 
-      <section className="dashboard-content">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">Painel</span>
-            <h2>Minhas tarefas</h2>
-          </div>
-
-          <button className="primary-action">Nova tarefa</button>
-        </div>
-
-        {erro && <p className="error-message">{erro}</p>}
-
-        <div className="task-grid">
-          {tarefas.map((tarefa) => (
-            <article className="task-card" key={tarefa.id}>
-              <div className="task-card-header">
-                <span
-                  className={
-                    tarefa.concluida
-                      ? "status status-done"
-                      : "status status-pending"
-                  }
-                >
-                  {tarefa.concluida ? "Concluída" : "Pendente"}
-                </span>
-
-                <span className="task-date">
-                  {tarefa.dataCriacao || "Sem data"}
-                </span>
-              </div>
-
-              <h3>{tarefa.titulo}</h3>
-              <p>{tarefa.descricao}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-    </main>
+      <button type="button" onClick={sair}>
+        Sair
+      </button>
+    </div>
   );
 }

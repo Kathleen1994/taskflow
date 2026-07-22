@@ -5,74 +5,66 @@ import { register } from "../services/authService";
 export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   const navigate = useNavigate();
 
   async function cadastrar(event) {
     event.preventDefault();
 
-    setMensagem("");
     setErro("");
+    setCarregando(true);
 
     try {
       await register(username, password);
 
-      setMensagem("Usuário cadastrado com sucesso!");
+      alert("Usuário cadastrado com sucesso!");
 
-      setTimeout(() => {
-        navigate("/");
-      }, 1200);
+      navigate("/");
     } catch (error) {
-      console.error(error);
+      console.error("Erro no cadastro:", error);
+
       setErro("Não foi possível cadastrar o usuário.");
+    } finally {
+      setCarregando(false);
     }
   }
 
   return (
-    <main className="auth-page">
-      <section className="auth-card">
-        <div className="brand-mark">TF</div>
+    <div className="register">
+      <h1>Criar conta</h1>
 
-        <h1>Criar conta</h1>
-        <p className="subtitle">Cadastre-se para começar a usar o TaskFlow.</p>
+      <form onSubmit={cadastrar}>
+        <input
+          type="text"
+          placeholder="Usuário"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          required
+        />
 
-        <form onSubmit={cadastrar}>
-          <label htmlFor="username">Usuário</label>
-          <input
-            id="username"
-            type="text"
-            placeholder="Digite seu usuário"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            required
-          />
+        <input
+          type="password"
+          placeholder="Senha"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
 
-          <label htmlFor="password">Senha</label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Digite sua senha"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+        {erro && <p>{erro}</p>}
 
-          {mensagem && <p>{mensagem}</p>}
-          {erro && <p className="error-message">{erro}</p>}
-
-          <button type="submit">Cadastrar</button>
-        </form>
-
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => navigate("/")}
-        >
-          Voltar para o login
+        <button type="submit" disabled={carregando}>
+          {carregando ? "Cadastrando..." : "Cadastrar"}
         </button>
-      </section>
-    </main>
+      </form>
+
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+      >
+        Voltar para login
+      </button>
+    </div>
   );
 }

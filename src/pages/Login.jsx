@@ -1,64 +1,72 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import { login } from "../services/authService";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
+
   const navigate = useNavigate();
 
   async function entrar(event) {
     event.preventDefault();
+
     setErro("");
+    setCarregando(true);
 
     try {
-      const response = await api.post("/auth/login", null, {
-        params: {
-          username,
-          password,
-        },
-      });
+      const resposta = await login(username, password);
 
-      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("token", resposta.token);
+
+      alert("Login realizado");
+
       navigate("/dashboard");
-    } catch {
-      setErro("Utilizador ou palavra-passe inválidos.");
+    } catch (error) {
+      console.error("Erro no login:", error);
+
+      setErro("Usuário ou senha inválidos.");
+    } finally {
+      setCarregando(false);
     }
   }
 
   return (
-    <main className="auth-page">
-      <section className="auth-card">
-        <div className="brand-mark">TF</div>
+    <div className="login">
+      <h1>TaskFlow</h1>
 
-        <h1>TaskFlow</h1>
-        <p className="subtitle">Organize tarefas e mantenha o foco.</p>
+      <form onSubmit={entrar}>
+        <input
+          type="text"
+          placeholder="Usuário"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          required
+        />
 
-        <form onSubmit={entrar}>
-          <label htmlFor="username">Utilizador</label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            required
-          />
+        <input
+          type="password"
+          placeholder="Senha"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
 
-          <label htmlFor="password">Palavra-passe</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+        {erro && <p>{erro}</p>}
 
-          {erro && <p className="error-message">{erro}</p>}
+        <button type="submit" disabled={carregando}>
+          {carregando ? "Entrando..." : "Entrar"}
+        </button>
+      </form>
 
-          <button type="submit">Entrar</button>
-        </form>
-      </section>
-    </main>
+      <button
+        type="button"
+        onClick={() => navigate("/register")}
+      >
+        Criar conta
+      </button>
+    </div>
   );
 }
